@@ -1,0 +1,114 @@
+---
+  - name: Playbook for nrpe setup
+    hosts: "webserver"
+    remote_user: root
+    become: true
+    become_method: sudo
+
+    vars:
+      nrpe:
+          nagios_server: 10.10.10.10
+        - name: nrpe
+          tarball_url: "https://github.com/NagiosEnterprises/nrpe/archive/nrpe-3.2.1.tar.gz"
+          install_dir: "/tmp/nrpe-nrpe-3.2.1"
+          version: nrpe-3.2.1
+        - name: nagios-plugins
+          tarball_url: "https://github.com/nagios-plugins/nagios-plugins/archive/release-2.2.1.tar.gz"
+          install_dir: "/tmp/nagios-plugins-release-2.2.1"
+          version: nagios-plugins-release-2.2.1
+
+    tasks:
+    - name: Install epel-release repository
+      yum: name=epel-release state=present
+
+    - name: Install nrpe, nagios-plugins-all
+      yum: name={{item}} state=present
+      with_items:
+        - gcc
+        - glibc
+        - glibc-common
+        - openssl
+        - openssl-devel
+        - perl
+        - wget
+        - perl-Sys-Statistics-Linux
+        - perl-libwww-perl
+        - perl-Time-HiRes
+        - perl-Nagios-Plugin
+        - cyrus-sasl-plain
+
+    - name: Downloading NRPE sources
+      get_url:
+        url: "{{ tarball_url }}"
+        dest: "/tmp/{{ version }}.tar.gz"
+      register: nrpe_plugin_source
+
+    - name: Unpacking NRPE
+      unarchive:
+        copy: no
+        dest: /tmp/
+        src: "{{ nrpe_plugin_source.dest }}"
+      when: nrpe_plugin_source.changed
+      register: nrpe_plugin_source_unpack
+      loop: "{{ test }}"
+
+    - name: Configuring Nrpe source with custom modules
+      command: "./configure --enable-command-args"
+      args:
+        chdir: "{{ nrpe_install_dir }}"
+      when: nrpe_source_unpack.changed
+      register: nrpe_configure
+
+    - name: Installing NRPE
+      become: yes
+      shell: make all && make install-groups-users && make install && make install-config && make install-init
+      args:
+        chdir: "{{ nrpe_install_dir }}"
+      when: nrpe_configure.changed
+
+    - name: Downloading Nagios-Plugins sources
+      get_url:
+        url: "{{ nagios_plugins_tarball_url }}"
+        dest: "/tmp/{{ nagios_plugins_version }}.tar.gz"
+      register: nagios_source
+
+    - name: Unpacking Nagios-plugins
+      unarchive:
+        copy: no
+        dest: /tmp/
+        src: "{{ nagios_source.dest }}"
+      when: nagios_source.changed
+      register: nagios_source_unpack
+
+    - name: Configuring Nagios source with custom modules
+      shell: ./tools/setup && ./configure
+      args:
+        chdir: "{{ nagios_install_dir }}"
+      when: nagios_source_unpack.changed
+      register: nagios_configure
+
+    - name: Installing Nagios-Plugins
+      become: yes
+      shell: make && make install
+      args:
+        chdir: "{{ nagios_install_dir }}"
+      when: nagios_configure.changed
+
+    - name: Configure nagios server IP in nrpe configuration file
+      lineinfile:
+        dest: /usr/local/nagios/etc/nrpe.cfg
+        regexp: allowed_hosts=
+        line: allowed_hosts=127.0.0.1,{{nagios_server}}
+
+    - name: Ensure we have our own comment added to /etc/services
+      lineinfile:
+        path: /etc/services
+        line: "nrpe            5666/tcp                 #NRPE"
+
+    - name: Start nrpe service and enable them on startup
+      service: name={{item}} state=restarted enabled=yes
+      with_items:
+        - nrpe
+
+    - name: verification
+      command: /usr/local/nagios/libexec/check_load -w 15,10,5 -c 30,25,20

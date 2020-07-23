@@ -1,0 +1,22 @@
+---
+-
+  become: true
+  hosts: webserver
+  remote_user: root
+  tasks:
+    -
+      include_vars: users.yml
+    -
+      name: "Removing users to Jump Server"
+      user:
+        name: "{{ item.username }}"
+        state: absent
+        remove: yes
+      with_items: "{{ users }}"
+
+    -
+      name: "Remove Sudo Access"
+      file:
+        path: "/etc/sudoers.d/{{ item.username }}"
+        state: absent
+      with_items: "{{ users }}"

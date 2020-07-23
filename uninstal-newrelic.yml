@@ -1,0 +1,24 @@
+- hosts: webserver
+  become: yes
+  roles:
+    - name: newrelic.newrelic-infra
+      vars:
+        nrinfragent_os_name: CentOS
+        nrinfragent_os_version: 6.10
+        nrinfragent_state: absent
+        nrinfragent_config:
+          license_key: "actual_key"
+
+  tasks:
+    - debug:
+        msg: "remove files and folders"
+
+    - name: Recursively remove directory
+      file:
+        path: /etc/newrelic-infra
+        state: absent
+
+    - name: Remove file (delete file)
+      file:
+        path: /etc/newrelic-infra.yml
+        state: absent

@@ -1,0 +1,23 @@
+---
+-
+  become: true
+  hosts: webserver
+  remote_user: root
+
+  tasks:
+    -
+      include_vars: domains.yml
+
+    - name: install httpd*
+      yum: name=httpd state=latest
+
+    - name: Create VirtualHost {{ item.domain }}
+      template:
+        src: /home/ansible/sample.conf
+        dest: "/etc/httpd/vhost.d/{{ item.domain }}.conf"
+      loop: "{{ test }}"
+
+    - name: ensure httpd is running
+      service:
+        name: httpd
+        state: restarted

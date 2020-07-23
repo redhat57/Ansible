@@ -1,0 +1,11 @@
+- hosts: webserver
+  become: yes
+  roles:
+    - name: newrelic.newrelic-infra
+      vars:
+        nrinfragent_os_name: CentOS
+        nrinfragent_os_version: 6.10
+        nrinfragent_config:
+          license_key: "actualkey"
+          log_file: /var/log/newrelic/nr-infra.log
+          log_to_stdout: false

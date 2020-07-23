@@ -1,0 +1,19 @@
+- hosts: webserver
+  become: yes
+  roles:
+    - ansible-wazuh-agent
+  vars:
+    wazuh_managers:
+      - address: 10.10.10.10
+        port: 1514
+        protocol: udp
+        api_port: 55000
+        api_proto: 'http'
+        api_user: siem
+    wazuh_agent_authd:
+      registration_address: 10.10.10.10
+      enable: true
+      agent_name: webserver
+      port: 1515
+      ssl_agent_ca: null
+      ssl_auto_negotiate: 'no'

@@ -1,0 +1,20 @@
+---
+-
+  become: true
+  hosts: webserver
+  remote_user: root
+  vars:
+     password: $6$.q0elbrb8JrMhy$1zoRXAbfQ6KzVmbfpEU1Dmt6Xcioz3lGw0ZaEI91
+  tasks:
+    -
+      include_vars: users.yml
+    -
+      name: "Creating users to Jump Server"
+      user: name={{ item.username }} password={{ password }}
+      with_items: "{{ users }}"
+    -
+      name: "deploy sudo passwordless access"
+      copy:
+        content: "{{ item.username }} ALL=(ALL) NOPASSWD: ALL"
+        dest: "/etc/sudoers.d/{{ item.username }}"
+      with_items: "{{ users }}"

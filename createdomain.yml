@@ -1,0 +1,57 @@
+---
+-
+  become: true
+  hosts: webserver
+  remote_user: root
+  vars:
+    password: $6$.q0elbrb8JrMhy$1zoRXAbfQQ8hxF7W4UR6hHhz9VChImxmt6Xcioz3lGw0ZaEI91
+    uname: demowebdeploy
+    name: demo
+  tasks:
+    -
+      include_vars: users.yml
+    -
+      name: "Creating users to Jump Server"
+      user: name={{ item.username }} password={{ password }}
+      with_items: "{{ users }}"
+
+    -
+      include_vars: domains.yml
+
+    - name: Create VirtualHost {{ item.domain }}
+      template:
+        src: /home/ansible/apache-sample.conf
+        dest: "/etc/httpd/vhost.d/{{ item.domain }}.conf"
+      loop: "{{ test }}"
+
+    - name: Creates directory
+      file:
+        path: /home/{{ uname }}/{{item}}
+        state: directory
+        owner: "{{ uname }}"
+        group: apache
+        mode: 0755
+        recurse: yes
+      with_items: ["demo", "logs"]
+
+    - name: Creates directory
+      file:
+        path: /var/www/{{ name }}
+        state: directory
+        owner: "{{ uname }}"
+        group: apache
+        mode: 0755
+        recurse: yes
+
+    - name: Ensure to add /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        line: "/var/www/{{ name }} /home/{{ uname }}/{{ name }}		none rw,bind  0 0"
+
+    - name: Mount directory
+      command: mount -a
+
+    - name: ensure httpd is running
+      service:
+        name: httpd
+        state: restarted

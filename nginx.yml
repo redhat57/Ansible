@@ -1,0 +1,32 @@
+---
+-
+  become: true
+  hosts: webserver
+  remote_user: root
+
+  vars:
+    test:
+      - name: alpha
+        domain: alpha.abc.com
+        location: alpha
+        port: 9001
+      - name: bravo
+        domain: bravo.abc.com
+        location: bravo
+        port: 9002
+
+  tasks:
+  - name: install nginx-1.10.3-1.el6
+    yum: name=nginx state=latest
+
+  - name: Create VirtualHost {{ item.domain }}
+    template:
+      src: /home/ansible/vnginx-sample.conf
+      dest: "/etc/nginx/sites-enabled/{{ item.domain }}.conf"
+
+    loop: "{{ test }}"
+
+  - name: ensure nginx is running
+    service:
+      name: nginx
+      state: restarted
