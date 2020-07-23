@@ -125,4 +125,3 @@ Use the following command to show a list of available tags:
 ```
 ansible-playbook site.yml --list-tags
 ```
-Created by:
