@@ -13,7 +13,7 @@ The remaining configuration (installing packages, configuring services, etc.) ca
 Simply download (clone) the repository and start modifying files according to your needs.
 
 ```
-git clone https://github.com/redhat57/ansible-playbooks.git myAnsibleProject/
+git clone https://github.com/redhat57/Ansible.git myAnsibleProject/
 ```
 
 ## Using Ansible
