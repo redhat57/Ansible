@@ -119,9 +119,7 @@ roles/
 Consider adding separate roles for different applications (e.g. webservers, dbservers, hypervisors, etc.), or for different responsibilities which servers fulfill (e.g. infra_server vs. infra_client).
 
 ### Tags
-
 Use the following command to show a list of available tags:
-
 ```
 ansible-playbook site.yml --list-tags
 ```
